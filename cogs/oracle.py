@@ -19,7 +19,7 @@ def normalize_question(q: str) -> str:
 class Oracle(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.WATCH_CHANNEL_ID = 1445080995480076441 #1454904537067294870#
+        self.WATCH_CHANNEL_ID = 1454904537067294870#1445080995480076441 #
         self.DAILY_LIMIT = 20
 
     @commands.Cog.listener()
