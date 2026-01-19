@@ -36,7 +36,7 @@ def initialize_table():
 
 # ---------------- Insert a new row ----------------
 def insert_request(user_id, username, question, ai_response, daily_limit, current_count):
-    timestamp = datetime.datetime.utcnow().isoformat()
+    timestamp = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
     data = {
         "user_id": user_id,
         "username": username,
@@ -101,11 +101,15 @@ def generate_request_summary():
 
         if not rows:
             return {"message": "No requests found in the database."}
+        ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
 
         # Helper for UTC+8
         def to_utc8(ts_str):
             dt = datetime.datetime.fromisoformat(ts_str)
-            return dt + datetime.timedelta(hours=8)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            return dt.astimezone(ORACLE_TZ)
+
 
         # Organize requests by day and by user
         requests_by_day = {}
@@ -154,7 +158,7 @@ def generate_request_summary():
             }
 
         # 4️⃣ Today's stats (UTC+8)
-        now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+        now = datetime.datetime.now(ORACLE_TZ)
         today_key = now.date()
         today_requests = requests_by_day.get(today_key, [])
         requests_per_user_today = {}

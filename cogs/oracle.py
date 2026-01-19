@@ -7,8 +7,10 @@ import datetime
 from cogs.db.database_editor import insert_request, find_previous_response, get_last_request_for_user
 
 # Helper function for UTC+8
+ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
+
 def now_utc8():
-    return datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+    return datetime.datetime.now(ORACLE_TZ)
 
 # Helper function to normalize questions for repeat detection
 def normalize_question(q: str) -> str:
@@ -42,7 +44,7 @@ class Oracle(commands.Cog):
         # --- Match trigger "Oracle:" with optional spaces, ending with "?" ---
         match = re.match(r"^Oracle\s*:\s*(.+)\?$", content, re.IGNORECASE)
         if not match:
-            print("⛔ Ignored: does not match trigger pattern")
+            #print("⛔ Ignored: does not match trigger pattern")
             return
 
         # Extract question text
@@ -69,7 +71,9 @@ class Oracle(commands.Cog):
 
         if last_request:
             last_request_ts = datetime.datetime.fromisoformat(last_request["timestamp"])
-            last_request_time = last_request_ts + datetime.timedelta(hours=8)  # UTC+8
+            if last_request_ts.tzinfo is None:
+                last_request_ts = last_request_ts.replace(tzinfo=datetime.timezone.utc)
+            last_request_time = last_request_ts.astimezone(ORACLE_TZ)
             last_request_date = last_request_time.date()
             current_count = last_request.get("current_count", 0)
             #print(f"🕒 Last request at {last_request_time}, current_count={current_count}")
@@ -86,9 +90,7 @@ class Oracle(commands.Cog):
         # --- 2a️⃣ Minimum 2-minute interval ---
         if last_request_time:
             # Convert both to naive UTC+8 for comparison
-            now_naive = now.replace(tzinfo=None)
-            last_naive = last_request_time.replace(tzinfo=None)
-            delta = now_naive - last_naive
+            delta = now - last_request_time
             #print(f"⏱ Time since last request: {delta.total_seconds()} seconds")
             if delta.total_seconds() < 120:
                 remaining_sec = 120 - int(delta.total_seconds())
@@ -101,7 +103,11 @@ class Oracle(commands.Cog):
 
         # --- 2b️⃣ Daily limit ---
         if current_count >= self.DAILY_LIMIT:
-            tomorrow = datetime.datetime.combine(now.date() + datetime.timedelta(days=1), datetime.time(0, 0))
+            tomorrow = datetime.datetime.combine(
+    now.date() + datetime.timedelta(days=1),
+    datetime.time(0, 0),
+    tzinfo=ORACLE_TZ
+)
             remaining = tomorrow - now
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
