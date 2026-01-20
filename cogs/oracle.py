@@ -28,6 +28,16 @@ def now_utc8():
 def normalize_question(q: str) -> str:
     return re.sub(r"[^a-zA-Z]", "", q).lower()
 
+async def send_error_with_status(channel, now, current_count, daily_limit, message):
+    await channel.send(message)
+    await channel.send(
+        oracle_status_message(
+            now=now,
+            current_count=current_count,
+            daily_limit=daily_limit,
+        )
+    )
+
 
 def oracle_status_message(now, current_count, daily_limit):
     remaining_requests = daily_limit - current_count
@@ -179,18 +189,30 @@ class Oracle(commands.Cog):
                 )
 
                 if any(signal in error_text for signal in overload_signals):
-                    await message.channel.send(
-                        "🔮 **Oracle**: The stars are clouded. "
-                        "Too many voices speak at once. "
-                        "Return when the sky quiets."
+                    await send_error_with_status(
+                        channel=message.channel,
+                        now=now,
+                        current_count=current_count,
+                        daily_limit=self.DAILY_LIMIT,
+                        message=(
+                            "🔮 **Oracle**: The stars are clouded. "
+                            "Too many voices speak at once. "
+                            "Return when the sky quiets."
+                        ),
                     )
                     return
 
-                # All other errors: show real message
-                await message.channel.send(
-                    f"❌ **Oracle Error**:\n```{error_text}```"
+                # All other errors
+                await send_error_with_status(
+                    channel=message.channel,
+                    now=now,
+                    current_count=current_count,
+                    daily_limit=self.DAILY_LIMIT,
+                    message=f"❌ **Oracle Error**:\n```{error_text}```",
                 )
                 return
+
+
 
 
 
