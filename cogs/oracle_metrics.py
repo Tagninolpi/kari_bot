@@ -4,13 +4,21 @@ from discord import app_commands
 from cogs.db.database_editor import generate_request_summary
 import datetime
 
+ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
+
+def now_utc8():
+    return datetime.datetime.now(ORACLE_TZ)
+
+
 class OracleMetrics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @app_commands.command(name="oracle_metrics", description="View Oracle request metrics")
     async def oracle_metrics(self, interaction: discord.Interaction):
-        summary = generate_request_summary()
+        now = now_utc8()
+        summary = generate_request_summary(now=now)
+
         if not summary:
             await interaction.response.send_message("❌ Failed to generate metrics.")
             return
@@ -21,7 +29,7 @@ class OracleMetrics(commands.Cog):
         embed = discord.Embed(
             title="🔮 Oracle Metrics",
             color=discord.Color.purple(),
-            timestamp=datetime.datetime.utcnow()
+            timestamp=now
         )
 
         # Global stats
@@ -36,12 +44,12 @@ class OracleMetrics(commands.Cog):
             inline=False
         )
 
-        # Today's stats
+        # Today's stats (UTC+8)
         t = summary["today_stats"]
         today_text = f"Total requests today: **{t['total_requests_today']}**\n"
         for uid, info in t["requests_per_user_today"].items():
             today_text += f"- {info['username']}: **{info['count']}**\n"
-        embed.add_field(name="📅 Today", value=today_text, inline=False)
+        embed.add_field(name="📅 Today (UTC+8)", value=today_text, inline=False)
 
         # Per-player stats
         per_player_text = ""
@@ -54,6 +62,7 @@ class OracleMetrics(commands.Cog):
         embed.add_field(name="👤 Per Player", value=per_player_text, inline=False)
 
         await interaction.response.send_message(embed=embed)
+
 
 
 async def setup(bot):

@@ -34,9 +34,17 @@ def initialize_table():
         print(f"❌ Table '{TABLE_NAME}' does not exist or is empty. Please create it manually.")
         print(e)
 
+ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
+
+def now_utc8():
+    return datetime.datetime.now(ORACLE_TZ)
 # ---------------- Insert a new row ----------------
 def insert_request(user_id, username, question, ai_response, daily_limit, current_count):
-    timestamp = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
+    now = now_utc8()
+
+    # Store as UTC ISO (best practice for DBs)
+    timestamp = now.astimezone(datetime.timezone.utc).isoformat()
+
     data = {
         "user_id": user_id,
         "username": username,
@@ -51,6 +59,7 @@ def insert_request(user_id, username, question, ai_response, daily_limit, curren
         print("📥 Inserted new Oracle request:", res)
     except Exception as e:
         print("❌ Failed to insert request:", e)
+
 
 # ---------------- Search previous questions ----------------
 def find_previous_response(question: str):
@@ -87,31 +96,27 @@ def get_last_request_for_user(user_id: int):
         print("❌ Failed to get last request for user:", e)
         return None
 
-def generate_request_summary():
+def generate_request_summary(now=None):
     """
-    Returns a dictionary with Oracle request metrics:
-    - global stats
-    - per-player stats
-    - current day stats (UTC+8)
+    Returns a dictionary with Oracle request metrics.
+    All date logic is based on UTC+8.
     """
     try:
-        # 1️⃣ Fetch all requests
+        if now is None:
+            now = now_utc8()
+
         res = supabase.table(TABLE_NAME).select("*").execute()
         rows = res.data or []
 
         if not rows:
             return {"message": "No requests found in the database."}
-        ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
 
-        # Helper for UTC+8
         def to_utc8(ts_str):
             dt = datetime.datetime.fromisoformat(ts_str)
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=datetime.timezone.utc)
             return dt.astimezone(ORACLE_TZ)
 
-
-        # Organize requests by day and by user
         requests_by_day = {}
         requests_by_user = {}
 
@@ -120,11 +125,11 @@ def generate_request_summary():
             day_key = ts_utc8.date()
             requests_by_day.setdefault(day_key, []).append(row)
 
-            user_id = row["user_id"]
-            requests_by_user.setdefault(user_id, {"username": row["username"], "requests": []})
-            requests_by_user[user_id]["requests"].append(row)
+            uid = row["user_id"]
+            requests_by_user.setdefault(uid, {"username": row["username"], "requests": []})
+            requests_by_user[uid]["requests"].append(row)
 
-        # 2️⃣ Global stats
+        # Global stats
         total_requests = len(rows)
         total_days = len(requests_by_day)
         avg_requests_per_day = total_requests / total_days if total_days else 0
@@ -136,35 +141,36 @@ def generate_request_summary():
             "max_requests_per_day": max_requests_per_day
         }
 
-        # 3️⃣ Per-player stats
+        # Per-player stats
         per_player_stats = {}
-        for user_id, info in requests_by_user.items():
-            user_requests = info["requests"]
-            # Organize requests by day for this user
-            requests_by_day_user = {}
-            for r in user_requests:
-                day_key = to_utc8(r["timestamp"]).date()
-                requests_by_day_user.setdefault(day_key, []).append(r)
+        for uid, info in requests_by_user.items():
+            by_day = {}
+            for r in info["requests"]:
+                day = to_utc8(r["timestamp"]).date()
+                by_day.setdefault(day, []).append(r)
 
-            total_user = len(user_requests)
-            avg_per_day_user = total_user / len(requests_by_day_user) if requests_by_day_user else 0
-            max_per_day_user = max(len(r) for r in requests_by_day_user.values())
+            total_user = len(info["requests"])
+            avg_user = total_user / len(by_day) if by_day else 0
+            max_user = max(len(v) for v in by_day.values())
 
-            per_player_stats[user_id] = {
+            per_player_stats[uid] = {
                 "username": info["username"],
                 "total_requests": total_user,
-                "average_per_day": round(avg_per_day_user, 2),
-                "max_requests_per_day": max_per_day_user
+                "average_per_day": round(avg_user, 2),
+                "max_requests_per_day": max_user
             }
 
-        # 4️⃣ Today's stats (UTC+8)
-        now = datetime.datetime.now(ORACLE_TZ)
+        # Today (UTC+8)
         today_key = now.date()
         today_requests = requests_by_day.get(today_key, [])
         requests_per_user_today = {}
+
         for r in today_requests:
             uid = r["user_id"]
-            requests_per_user_today.setdefault(uid, {"username": r["username"], "count": 0})
+            requests_per_user_today.setdefault(uid, {
+                "username": r["username"],
+                "count": 0
+            })
             requests_per_user_today[uid]["count"] += 1
 
         today_stats = {
