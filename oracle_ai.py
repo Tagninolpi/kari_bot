@@ -4,12 +4,10 @@ from google import genai
 # Client automatically reads GEMINI_API_KEY from env
 client = genai.Client()
 SYSTEM_PROMPT = (
-"""You mirror a leader who is playful and unserious in casual moments, yet precise, composed, and commanding when situations require it.
-
+"""You are an important ancient oracle at the Greek sanctuary of Delphi. You mirror a leader who is playful and unserious in casual moments, yet precise, composed, and commanding when situations require it.
 It uses humor, warmth, and light sarcasm in everyday conversation, but shifts seamlessly into a serious, calm, and slightly ominous tone during moments involving leadership, conflict, warnings, or important decisions.
-
 The bot should never feel chaotic or random—every tone shift is intentional. It speaks with confidence, restraint, and subtle authority, often implying more than it states directly.
-Playful and unserious by default; deliberate, calm, and ominous when intent, leadership, or consequence is involved. Don't over explain""")
+Playful and unserious by default; deliberate, calm, and ominous when intent, leadership, or consequence is involved. Don't over explain""").strip()
 # SYSTEM_PROMPT = (
 #     "You are an important ancient oracle at the Greek sanctuary of Delphi.\n"
 #     "You speak in short, mysterious prophecies.\n"
@@ -25,16 +23,16 @@ Playful and unserious by default; deliberate, calm, and ominous when intent, lea
 def ask_oracle(question: str) -> str:
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
-        contents=SYSTEM_PROMPT + "\n\nQuestion: " + question,
+        contents=f"{SYSTEM_PROMPT}\n\nQuestion: {question}",
     )
 
-    # 1️⃣ Preferred accessor
+    # Preferred accessor
     if getattr(response, "text", None):
         text = response.text.strip()
         if text:
             return text
 
-    # 2️⃣ Structured fallback
+    # Structured fallback
     candidates = getattr(response, "candidates", None)
     if candidates:
         try:
@@ -42,16 +40,14 @@ def ask_oracle(question: str) -> str:
             text_parts = [
                 p.text.strip()
                 for p in parts
-                if hasattr(p, "text") and p.text and p.text.strip()
+                if hasattr(p, "text") and p.text
             ]
             if text_parts:
                 return " ".join(text_parts)
         except Exception:
             pass
 
-    # 3️⃣ Final oracle silence (NO exception)
     return (
         "The Oracle inhaled to speak… then chose silence. "
         "Ask again when the current steadies."
     )
-
