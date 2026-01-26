@@ -5,7 +5,7 @@ import datetime
 import discord
 from discord.ext import commands
 
-from oracle_ai import ask_oracle
+from KariGPT_ai import ask_KariGPT
 from cogs.db.database_editor import (
     insert_request,
     find_previous_response,
@@ -15,11 +15,11 @@ from cogs.db.database_editor import (
 # =========================
 # Timezone (UTC+8)
 # =========================
-ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
+KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 
 def now_utc8():
-    return datetime.datetime.now(ORACLE_TZ)
+    return datetime.datetime.now(KariGPT_TZ)
 
 
 # =========================
@@ -31,7 +31,7 @@ def normalize_question(q: str) -> str:
 async def send_error_with_status(channel, now, current_count, daily_limit, message):
     await channel.send(message)
     await channel.send(
-        oracle_status_message(
+        KariGPT_status_message(
             now=now,
             current_count=current_count,
             daily_limit=daily_limit,
@@ -39,12 +39,12 @@ async def send_error_with_status(channel, now, current_count, daily_limit, messa
     )
 
 
-def oracle_status_message(now, current_count, daily_limit):
+def KariGPT_status_message(now, current_count, daily_limit):
     remaining_requests = daily_limit - current_count
     tomorrow = datetime.datetime.combine(
         now.date() + datetime.timedelta(days=1),
         datetime.time(0, 0),
-        tzinfo=ORACLE_TZ,
+        tzinfo=KariGPT_TZ,
     )
 
     remaining_time = tomorrow - now
@@ -62,7 +62,7 @@ async def send_daily_limit_message(channel, now, daily_limit):
     tomorrow = datetime.datetime.combine(
         now.date() + datetime.timedelta(days=1),
         datetime.time(0, 0),
-        tzinfo=ORACLE_TZ,
+        tzinfo=KariGPT_TZ,
     )
 
     remaining = tomorrow - now
@@ -70,7 +70,7 @@ async def send_daily_limit_message(channel, now, daily_limit):
     minutes, seconds = divmod(remainder, 60)
 
     await channel.send(
-        f"🔮 Oracle: The stars must rest until tomorrow. "
+        f"🔮 KariGPT: The stars must rest until tomorrow. "
         f"(Daily limit {daily_limit} reached)\n"
         f"Time remaining: {hours}h {minutes}m {seconds}s"
     )
@@ -79,17 +79,21 @@ async def send_daily_limit_message(channel, now, daily_limit):
 # =========================
 # Cog
 # =========================
-class Oracle(commands.Cog):
+class KariGPT(commands.Cog):
     def __init__(self, bot): 
         self.bot = bot
-        self.WATCH_CHANNEL_ID = [1445080995480076441,1464061703015895233]
+        self.WATCH_CHANNEL_ID = [1445080995480076441,1465442662470389914]
         self.DAILY_LIMIT = 20
 
         # Precompiled regex (safer + faster)
         self.trigger_regex = re.compile(
-            r"^Oracle\s*:\s*(.+?)\s*\?\s*$",
+            r"^KariGPT\s*:\s*(.+?)\s*\?\s*$",
             re.IGNORECASE,
         )
+
+    @commands.Cog.listener()
+    async def on_error(self, event, *args, **kwargs):
+        traceback.print_exc()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -101,6 +105,7 @@ class Oracle(commands.Cog):
 
         match = self.trigger_regex.match(message.content.strip())
         if not match:
+            print("[KariGPT] Ignored:", message.content)
             await self.bot.process_commands(message)
             return
 
@@ -113,7 +118,7 @@ class Oracle(commands.Cog):
         previous = find_previous_response(normalized_question)
         if previous:
             await message.channel.send(
-                f"🔮 **Oracle**: {previous} *(from memory)*"
+                f"🔮 **KariGPT**: {previous} *(from memory)*"
             )
             return
 
@@ -132,11 +137,11 @@ class Oracle(commands.Cog):
                 ts = datetime.datetime.fromisoformat(last_request["timestamp"])
                 if ts.tzinfo is None:
                     ts = ts.replace(tzinfo=datetime.timezone.utc)
-                last_request_time = ts.astimezone(ORACLE_TZ)
+                last_request_time = ts.astimezone(KariGPT_TZ)
                 last_request_date = last_request_time.date()
                 current_count = last_request.get("current_count", 0)
             except Exception:
-                # Corrupt timestamp should never kill the oracle
+                # Corrupt timestamp should never kill the KariGPT
                 last_request_time = None
                 last_request_date = None
                 current_count = 0
@@ -152,7 +157,7 @@ class Oracle(commands.Cog):
                 remaining = int(120 - delta)
                 minutes, seconds = divmod(remaining, 60)
                 await message.channel.send(
-                    f"⏳ Oracle: Patience. {minutes}m {seconds}s remain."
+                    f"⏳ KariGPT: Patience. {minutes}m {seconds}s remain."
                 )
                 return
 
@@ -171,7 +176,7 @@ class Oracle(commands.Cog):
         async with message.channel.typing():
             try:
                 prophecy = await asyncio.to_thread(
-                    ask_oracle,
+                    ask_KariGPT,
                     question,
                 )
                 current_count += 1
@@ -195,7 +200,7 @@ class Oracle(commands.Cog):
                         current_count=current_count,
                         daily_limit=self.DAILY_LIMIT,
                         message=(
-                            "🔮 **Oracle**: The stars are clouded. "
+                            "🔮 **KariGPT**: The stars are clouded. "
                             "Too many voices speak at once. "
                             "Return when the sky quiets."
                         ),
@@ -208,7 +213,7 @@ class Oracle(commands.Cog):
                     now=now,
                     current_count=current_count,
                     daily_limit=self.DAILY_LIMIT,
-                    message=f"❌ **Oracle Error**:\n```{error_text}```",
+                    message=f"❌ **KariGPT Error**:\n```{error_text}```",
                 )
                 return
 
@@ -219,29 +224,35 @@ class Oracle(commands.Cog):
         # =========================
         # Send response
         # =========================
-        await message.channel.send(f"🔮 **Oracle**: {prophecy}")
-        await message.channel.send(
-            oracle_status_message(
-                now,
-                current_count,
-                self.DAILY_LIMIT,
+        try:
+            await message.channel.send(f"🔮 **KariGPT**: {prophecy}")
+            await message.channel.send(
+                KariGPT_status_message(
+                    now,
+                    current_count,
+                    self.DAILY_LIMIT,
+                )
             )
-        )
 
-        # =========================
-        # Persist
-        # =========================
-        insert_request(
-            user_id=message.author.id,
-            username=str(message.author),
-            question=normalized_question,
-            ai_response=prophecy,
-            daily_limit=self.DAILY_LIMIT,
-            current_count=current_count,
-        )
+            insert_request(
+                user_id=message.author.id,
+                username=str(message.author),
+                question=normalized_question,
+                ai_response=prophecy,
+                daily_limit=self.DAILY_LIMIT,
+                current_count=current_count,
+            )
+
+        except Exception as e:
+            traceback.print_exc()
+            await message.channel.send(
+                "❌ **KariGPT** hit an error after generating a response."
+            )
+            raise
+
 
         await self.bot.process_commands(message)
 
 
 async def setup(bot):
-    await bot.add_cog(Oracle(bot))
+    await bot.add_cog(KariGPT(bot))

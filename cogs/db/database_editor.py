@@ -8,7 +8,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-TABLE_NAME = "oracle_requests"
+TABLE_NAME = "KariGPT_requests"
 
 # ---------------- Initialize Table ----------------
 def initialize_table():
@@ -34,10 +34,10 @@ def initialize_table():
         print(f"❌ Table '{TABLE_NAME}' does not exist or is empty. Please create it manually.")
         print(e)
 
-ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
+KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 def now_utc8():
-    return datetime.datetime.now(ORACLE_TZ)
+    return datetime.datetime.now(KariGPT_TZ)
 # ---------------- Insert a new row ----------------
 def insert_request(user_id, username, question, ai_response, daily_limit, current_count):
     now = now_utc8()
@@ -56,7 +56,7 @@ def insert_request(user_id, username, question, ai_response, daily_limit, curren
     }
     try:
         res = supabase.table(TABLE_NAME).insert(data).execute()
-        print("📥 Inserted new Oracle request:", res)
+        print("📥 Inserted new KariGPT request:", res)
     except Exception as e:
         print("❌ Failed to insert request:", e)
 
@@ -98,7 +98,7 @@ def get_last_request_for_user(user_id: int):
 
 def generate_request_summary(now=None):
     """
-    Returns a dictionary with Oracle request metrics.
+    Returns a dictionary with KariGPT request metrics.
     All date logic is based on UTC+8.
     """
     try:
@@ -115,7 +115,7 @@ def generate_request_summary(now=None):
             dt = datetime.datetime.fromisoformat(ts_str)
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=datetime.timezone.utc)
-            return dt.astimezone(ORACLE_TZ)
+            return dt.astimezone(KariGPT_TZ)
 
         requests_by_day = {}
         requests_by_user = {}

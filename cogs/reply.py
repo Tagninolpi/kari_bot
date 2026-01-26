@@ -8,10 +8,10 @@ class Reply(commands.Cog):
 
     @app_commands.command(
         name="reply",
-        description="Answer that delphinian as the oracle"
+        description="Answer that delphinian as the KariGPT"
     )
     @app_commands.default_permissions(manage_channels=True)
-    @app_commands.describe(msg="The message the oracle should send")
+    @app_commands.describe(msg="The message the KariGPT should send")
     async def reply(self, interaction: discord.Interaction, msg: str):
         try:
             # 1️⃣ Acknowledge the interaction silently

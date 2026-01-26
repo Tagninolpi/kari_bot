@@ -4,18 +4,18 @@ from discord import app_commands
 from cogs.db.database_editor import generate_request_summary
 import datetime
 
-ORACLE_TZ = datetime.timezone(datetime.timedelta(hours=8))
+KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=8))
 
 def now_utc8():
-    return datetime.datetime.now(ORACLE_TZ)
+    return datetime.datetime.now(KariGPT_TZ)
 
 
-class OracleMetrics(commands.Cog):
+class KariGPTMetrics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="oracle_metrics", description="View Oracle request metrics")
-    async def oracle_metrics(self, interaction: discord.Interaction):
+    @app_commands.command(name="karigpt_metrics", description="View KariGPT request metrics")
+    async def KariGPT_metrics(self, interaction: discord.Interaction):
         now = now_utc8()
         summary = generate_request_summary(now=now)
 
@@ -27,7 +27,7 @@ class OracleMetrics(commands.Cog):
             return
 
         embed = discord.Embed(
-            title="🔮 Oracle Metrics",
+            title="🔮 KariGPT Metrics",
             color=discord.Color.purple(),
             timestamp=now
         )
@@ -66,4 +66,4 @@ class OracleMetrics(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(OracleMetrics(bot))
+    await bot.add_cog(KariGPTMetrics(bot))
