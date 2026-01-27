@@ -8,7 +8,7 @@ class Reply(commands.Cog):
 
     @app_commands.command(
         name="reply",
-        description="Answer that delphinian as the KariGPT"
+        description="Answer as the KariGPT"
     )
     @app_commands.default_permissions(manage_channels=True)
     @app_commands.describe(msg="The message the KariGPT should send")

@@ -52,10 +52,12 @@ def KariGPT_status_message(now, current_count, daily_limit):
     minutes, _ = divmod(remainder, 60)
 
     return (
-        f"🜂 **The Ledger of Stars** 🜂\n"
-        f"Whispers remaining: **{remaining_requests}**\n"
-        f"The sky renews in **{hours}h {minutes}m**"
-    )
+    f"✨ **KariGPT**\n"
+    f"You’ve got **{remaining_requests}** requests left today\n"
+    f"Reset in **{hours}h {minutes}m**"
+)
+
+
 
 
 async def send_daily_limit_message(channel, now, daily_limit):
@@ -70,10 +72,10 @@ async def send_daily_limit_message(channel, now, daily_limit):
     minutes, seconds = divmod(remainder, 60)
 
     await channel.send(
-        f"🔮 KariGPT: The stars must rest until tomorrow. "
-        f"(Daily limit {daily_limit} reached)\n"
-        f"Time remaining: {hours}h {minutes}m {seconds}s"
-    )
+    f"⏳ **KariGPT**: That’s today’s limit.\n"
+    f"Come back in {hours}h {minutes}m {seconds}s."
+)
+
 
 
 # =========================
@@ -199,11 +201,11 @@ class KariGPT(commands.Cog):
                         now=now,
                         current_count=current_count,
                         daily_limit=self.DAILY_LIMIT,
-                        message=(
-                            "🔮 **KariGPT**: The stars are clouded. "
-                            "Too many voices speak at once. "
-                            "Return when the sky quiets."
-                        ),
+                        message = (
+    "⚠️ **KariGPT**: Things are moving too fast right now.\n"
+    "Try again in a sec."
+)
+,
                     )
                     return
 
