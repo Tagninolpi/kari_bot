@@ -168,11 +168,14 @@ class KariGPT(commands.Cog):
                     question,
                     personality=personality,
                 )
-                current_count += 1
 
-            except ValueError as ve:
-                await message.channel.send(f"❌ {ve}")
-                return
+                # Check if the response is an error
+                if response_text.startswith("❌") or response_text.startswith("⚠️"):
+                    await message.channel.send(response_text)
+                    return  # Do NOT increment count or save to DB
+
+                # ✅ Only now increment count and allow DB storage
+                current_count += 1
 
             except Exception as e:
                 await send_error_with_status(
@@ -188,8 +191,7 @@ class KariGPT(commands.Cog):
                 return
 
         # =========================
-        # Send + store
-        # =========================
+        # Send + store (only valid responses)
         await message.channel.send(
             f"🕯️ **{personality.capitalize()}** response:\n{response_text}"
         )
@@ -197,6 +199,7 @@ class KariGPT(commands.Cog):
             fallen_angel_status_message(now, current_count, self.DAILY_LIMIT)
         )
 
+        # Only insert if response is valid
         insert_request(
             user_id=message.author.id,
             username=str(message.author),
@@ -205,6 +208,7 @@ class KariGPT(commands.Cog):
             daily_limit=self.DAILY_LIMIT,
             current_count=current_count,
         )
+
 
         await self.bot.process_commands(message)
 
