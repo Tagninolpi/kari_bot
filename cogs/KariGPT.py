@@ -71,11 +71,10 @@ async def send_daily_limit_message(channel, now, daily_limit):
         f"⏳ **Daily request limit reached**.\n"
         f"Access will be restored in {hours}h {minutes}m {seconds}s."
     )
-
 # =========================
 # Cog
 # =========================
-class KariGPT(commands.Cog):
+class FallenAngels(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.WATCH_CHANNEL_ID = [1445080995480076441, 1465442662470389914]
@@ -199,19 +198,19 @@ class KariGPT(commands.Cog):
             fallen_angel_status_message(now, current_count, self.DAILY_LIMIT)
         )
 
-        # Only insert if response is valid
+        # Only insert if response is valid, now storing the angel/personality name
         insert_request(
             user_id=message.author.id,
             username=str(message.author),
             question=memory_key,
             ai_response=response_text,
+            personality=personality,  # ✅ store the angel name
             daily_limit=self.DAILY_LIMIT,
             current_count=current_count,
         )
-
 
         await self.bot.process_commands(message)
 
 
 async def setup(bot):
-    await bot.add_cog(KariGPT(bot))
+    await bot.add_cog(FallenAngels(bot))
