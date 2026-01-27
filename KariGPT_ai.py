@@ -43,9 +43,7 @@ def ask_KariGPT(question: str, personality: str = "karigpt") -> str:
     try:
         response = client.models.generate_content(
             model="gemini-3-flash-preview",
-            contents=f"{system_prompt}\n\nQuestion: {question}",
-            max_output_tokens=1000,  # Increased to allow longer answers
-        )
+            contents=f"{system_prompt}\n\nQuestion: {question}",)
 
         # Preferred accessor
         if getattr(response, "text", None):
