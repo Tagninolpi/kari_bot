@@ -44,4 +44,4 @@ class FallenAngels2(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(FallenAngels(bot))
+    await bot.add_cog(FallenAngels2(bot))
