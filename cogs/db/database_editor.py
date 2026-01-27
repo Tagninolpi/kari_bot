@@ -34,7 +34,7 @@ def initialize_table():
         print(f"❌ Table '{TABLE_NAME}' does not exist or is empty. Please create it manually.")
         print(e)
 
-KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=8))
+KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=-8))
 
 def now_utc8():
     return datetime.datetime.now(KariGPT_TZ)

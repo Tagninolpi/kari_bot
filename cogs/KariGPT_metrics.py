@@ -4,7 +4,7 @@ from discord import app_commands
 from cogs.db.database_editor import generate_request_summary
 import datetime
 
-KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=8))
+KariGPT_TZ = datetime.timezone(datetime.timedelta(hours=-8))
 
 def now_utc8():
     return datetime.datetime.now(KariGPT_TZ)
@@ -14,7 +14,7 @@ class KariGPTMetrics(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="karigpt_metrics", description="View KariGPT request metrics")
+    @app_commands.command(name="angels_metrics", description="View fallen angels request metrics")
     async def KariGPT_metrics(self, interaction: discord.Interaction):
         now = now_utc8()
         summary = generate_request_summary(now=now)
@@ -27,7 +27,7 @@ class KariGPTMetrics(commands.Cog):
             return
 
         embed = discord.Embed(
-            title="🔮 KariGPT Metrics",
+            title="🔮 Fallen Angels Metrics",
             color=discord.Color.purple(),
             timestamp=now
         )
