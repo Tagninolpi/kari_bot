@@ -27,6 +27,7 @@ def normalize_question(q: str) -> str:
     return re.sub(r"[^a-zA-Z]", "", q).lower()
 
 def build_memory_key(personality: str, question: str) -> str:
+    # include personality in the question string
     raw = f"{personality}:{question}"
     return normalize_question(raw)
 
@@ -71,6 +72,7 @@ async def send_daily_limit_message(channel, now, daily_limit):
         f"⏳ **Daily request limit reached**.\n"
         f"Access will be restored in {hours}h {minutes}m {seconds}s."
     )
+
 # =========================
 # Cog
 # =========================
@@ -198,13 +200,12 @@ class FallenAngels(commands.Cog):
             fallen_angel_status_message(now, current_count, self.DAILY_LIMIT)
         )
 
-        # Only insert if response is valid, now storing the angel/personality name
+        # Insert into DB WITHOUT personality column
         insert_request(
             user_id=message.author.id,
             username=str(message.author),
-            question=memory_key,
+            question=memory_key,  # keeps personality in question
             ai_response=response_text,
-            personality=personality,  # ✅ store the angel name
             daily_limit=self.DAILY_LIMIT,
             current_count=current_count,
         )
