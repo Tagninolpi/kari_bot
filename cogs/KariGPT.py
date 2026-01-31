@@ -79,7 +79,7 @@ async def send_daily_limit_message(channel, now, daily_limit):
 class FallenAngels(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.WATCH_CHANNEL_ID = [1445080995480076441, 1465442662470389914]
+        self.WATCH_CHANNEL_ID = [1445080995480076441, 1465442662470389914,1464061703015895233]
         self.DAILY_LIMIT = 20
 
         # personality : question ?
