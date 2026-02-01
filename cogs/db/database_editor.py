@@ -187,3 +187,21 @@ def generate_request_summary(now=None):
     except Exception as e:
         print("❌ Failed to generate request summary:", e)
         return None
+
+def get_last_request_global():
+    """
+    Returns the most recent request globally (any user), or None if empty.
+    """
+    try:
+        res = supabase.table(TABLE_NAME)\
+            .select("*")\
+            .order("timestamp", desc=True)\
+            .limit(1)\
+            .execute()
+
+        if res.data and len(res.data) > 0:
+            return res.data[0]
+        return None
+    except Exception as e:
+        print("❌ Failed to get last global request:", e)
+        return None

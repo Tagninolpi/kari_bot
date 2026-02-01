@@ -8,8 +8,7 @@ from discord.ext import commands
 from KariGPT_ai import ask_KariGPT
 from cogs.db.database_editor import (
     insert_request,
-    find_previous_response,
-    get_last_request_for_user,
+    find_previous_response,get_last_request_global,
 )
 
 # =========================
@@ -124,7 +123,7 @@ class FallenAngels(commands.Cog):
         # Rate limiting
         # =========================
         now = now_utc8()
-        last_request = get_last_request_for_user(message.author.id)
+        last_request = get_last_request_global()
 
         current_count = 0
         last_request_time = None
@@ -144,6 +143,7 @@ class FallenAngels(commands.Cog):
         if not last_request_date or now.date() > last_request_date:
             current_count = 0
             last_request_time = None
+
 
         if last_request_time:
             delta = (now - last_request_time).total_seconds()
